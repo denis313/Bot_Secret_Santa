@@ -1,0 +1,1 @@
+from LEXICON import lexicon
