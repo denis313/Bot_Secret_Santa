@@ -132,7 +132,8 @@ LEXICON_keyboard: dict[str: tuple] = {
     "gift_list_friend": 'Список подарков вашего друга: {gift_list}',
     "change_gift_list_friend": 'Список подарков вашего друга был изменен: {gift_list}',
     "stock": {'Бюджет игроков': 'stock_all', 'Подсчитать бюджет': 'stock_total',
-              'Обсудить в Группе': 'stock_chat'}
+              'Обсудить в Группе': 'stock_chat'},
+    'Бюджет':  'stock'
 }
 
 LEXICON_FSM = {
