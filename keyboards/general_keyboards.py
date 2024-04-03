@@ -83,3 +83,7 @@ keyboard_stock = InlineKeyboardBuilder()
 keyboard_stock.row(*[(InlineKeyboardButton(
     text=key,
     callback_data=name)) for key, name in LEXICON_keyboard["stock"].items()], width=1)
+
+# keyboard for change stock
+keyboard_change_stock = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Бюджет',
+                                                                   callback_data='stock')]])
