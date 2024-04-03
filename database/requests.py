@@ -26,10 +26,13 @@ class DatabaseManager:
 
     # add questionnaire for user from db
     async def add_questionnaire(self, questionnaire_data):
-        async with self.async_session() as session:
-            new_questionnaire = Questionnaire(**questionnaire_data)
-            session.add(new_questionnaire)
-            await session.commit()
+        try:
+            async with self.async_session() as session:
+                new_questionnaire = Questionnaire(**questionnaire_data)
+                session.add(new_questionnaire)
+                await session.commit()
+        except AttributeError:
+            print(f'анкета существует')
 
     # add gift list for user from db
     async def add_gift_list(self, gift_list_data):
@@ -47,45 +50,60 @@ class DatabaseManager:
 
     # get user by user_id from db
     async def get_user_by_id(self, user_id):
-        async with self.async_session() as session:
-            result = await session.execute(select(User).where(User.user_id == user_id))
-            user = result.scalar()
-            return user
+        try:
+            async with self.async_session() as session:
+                result = await session.execute(select(User).where(User.user_id == user_id))
+                user = result.scalar()
+                return user
+        except AttributeError:
+            print(f'невозможно получить пользователя его id == {user_id}')
 
     # get all users from db
     async def get_all_users(self, id_chat):
-        async with self.async_session() as session:
-            result = await session.execute(select(User).filter(User.chat_id == id_chat))
-            all_users = result.scalars()
-            users = [[user.id, user.user_id, user.chat_id, user.creator_id, user.game_status, user.id_secret_friend]
-                     for user in all_users]
-            return users
+        try:
+            async with self.async_session() as session:
+                result = await session.execute(select(User).filter(User.chat_id == id_chat))
+                all_users = result.scalars()
+                users = [[user.id, user.user_id, user.chat_id, user.creator_id, user.game_status, user.id_secret_friend]
+                         for user in all_users]
+                return users
+        except AttributeError:
+            print(f'невозможно получить юзеров из этого чата {id_chat}')
 
     # get questionnaire by user_id from db
     async def get_questionnaire_by_id(self, user_id):
-        async with self.async_session() as session:
-            query = select(Questionnaire).filter(Questionnaire.user_id == user_id)
-            result = await session.execute(query)
-            questionnaires = result.scalar()
-            return questionnaires if questionnaires is not None else None
+        try:
+            async with self.async_session() as session:
+                query = select(Questionnaire).filter(Questionnaire.user_id == user_id)
+                result = await session.execute(query)
+                questionnaires = result.scalar()
+                return questionnaires if questionnaires is not None else None
+        except AttributeError:
+            print(f'невозможно получить анкету пользователя его id == {user_id}')
 
     # get gift list by user_id from db
     async def get_gift_list(self, user_id):
-        async with self.async_session() as session:
-            g_l = select(GiftList).filter(GiftList.user_id == user_id)
-            result = await session.execute(g_l)
-            gift_list = result.scalar()
-            return gift_list if gift_list is not None else None
+        try:
+            async with self.async_session() as session:
+                g_l = select(GiftList).filter(GiftList.user_id == user_id)
+                result = await session.execute(g_l)
+                gift_list = result.scalar()
+                return gift_list if gift_list is not None else None
+        except AttributeError:
+            print(f'невозможно получить подарки пользователя его id == {user_id}')
 
     # get generate gift by user_id from db
     async def get_generate_gift(self, user_id, name_gift):
-        async with self.async_session() as session:
-            stmt = select(GenerateGifts).where(
-                (GenerateGifts.user_id == user_id) & (GenerateGifts.gift == name_gift)
-            )
-            result = await session.execute(stmt)
-            gift_list = result.scalars()
-            return gift_list
+        try:
+            async with self.async_session() as session:
+                stmt = select(GenerateGifts).where(
+                    (GenerateGifts.user_id == user_id) & (GenerateGifts.gift == name_gift)
+                )
+                result = await session.execute(stmt)
+                gift_list = result.scalars()
+                return gift_list
+        except AttributeError:
+            print(f'невозможно получить подарки пользователя его id == {user_id}')
 
     # update user by user_id or chat_id from db
 
@@ -105,10 +123,13 @@ class DatabaseManager:
 
     # update questionnaire by user_id from db
     async def update_questionnaire(self, user_id, questionnaire_data):
-        async with self.async_session() as session:
-            stmt = update(Questionnaire).where(Questionnaire.user_id == user_id).values(questionnaire_data)
-            await session.execute(stmt)
-            await session.commit()
+        try:
+            async with self.async_session() as session:
+                stmt = update(Questionnaire).where(Questionnaire.user_id == user_id).values(questionnaire_data)
+                await session.execute(stmt)
+                await session.commit()
+        except AttributeError:
+            raise f'невозможно анкету анкету пользователя его id == {user_id}'
 
     # update gift_list by user_id from db
     async def update_gift_list(self, user_id, list_data):
