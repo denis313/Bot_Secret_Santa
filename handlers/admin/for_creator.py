@@ -2,15 +2,16 @@ import logging
 
 from aiogram import F, Router, Bot
 from aiogram.filters import StateFilter
-from aiogram.fsm.state import default_state
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import default_state, StatesGroup, State
 from aiogram.types import Message, CallbackQuery
 
-from LEXICON.lexicon import LEXICON_Creator, LEXICON_keyboard
+from LEXICON.lexicon import LEXICON_Creator, LEXICON_keyboard, LEXICON_FSM
 from config_data.config import DATABASE_URL
 from database.requests import DatabaseManager
 from filters.filter import IsPrivate, IsCreator
 from handlers.general.message_profile import profile
-from keyboards.general_keyboards import keyboard_stock
+from keyboards.general_keyboards import keyboard_stock, keyboard_change_stock
 from services.services import random_assignment
 
 logger = logging.getLogger(__name__)
@@ -64,16 +65,57 @@ async def stock_gifts(message: Message):
 @router.callback_query(F.data == LEXICON_keyboard["stock"]["Бюджет игроков"], StateFilter(default_state))
 async def for_new_user(callback: CallbackQuery):
     user = callback.from_user
+    i = await db_manager.get_user_by_id(user_id=user.id)
+    users = await db_manager.get_all_users(id_chat=i.chat_id)
+    for user in users:
+        questionnaire = await db_manager.get_questionnaire_by_id(user_id=user[1])
+        await callback.message.answer(f'{questionnaire.name} бюджет: {questionnaire.stock}')
 
 
 @router.callback_query(F.data == LEXICON_keyboard["stock"]["Подсчитать бюджет"], StateFilter(default_state))
-async def for_new_user(callback: CallbackQuery):
+async def all_stock(callback: CallbackQuery):
     user = callback.from_user
+    stock = 0
+    i = await db_manager.get_user_by_id(user_id=user.id)
+    users = await db_manager.get_all_users(id_chat=i.chat_id)
+    print(users)
+    for user in users:
+        stocks = await db_manager.get_questionnaire_by_id(user_id=user[1])
+        if stocks:
+            stock += stocks.stock
+    await callback.message.answer(f'Средний бюджет: {stock / len(users)}')
 
 
 @router.callback_query(F.data == LEXICON_keyboard["stock"]["Обсудить в Группе"], StateFilter(default_state))
 async def for_new_user(callback: CallbackQuery, bot: Bot):
     user = callback.from_user
     data = await db_manager.get_user_by_id(user_id=user.id)
-    await callback.message.answer(text=LEXICON_Creator["stock_answer"])
+    await callback.message.answer(text=LEXICON_Creator["stock_answer"],  reply_markup=keyboard_change_stock)
     await bot.send_message(chat_id=data.chat_id, text=LEXICON_Creator['stock_chat'])
+
+
+class Stock(StatesGroup):
+    stock = State()
+
+
+@router.callback_query(F.data == LEXICON_keyboard['Бюджет'], StateFilter(default_state))
+async def change_stock(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Stock.stock)
+    await callback.message.answer('Введите бюджет на подарки')
+
+
+@router.message(StateFilter(Stock.stock), F.text.isdigit())
+async def stock(message: Message, state: FSMContext):
+    await state.update_data(stock=int(message.text))
+    data = await state.get_data()
+    await state.clear()
+    i = await db_manager.get_user_by_id(user_id=message.from_user.id)
+    users = await db_manager.get_all_users(id_chat=i.chat_id)
+    for user in users:
+        await db_manager.update_questionnaire(user_id=user[1], questionnaire_data=data)
+    await message.answer('Успешно сохранено✅')
+
+
+@router.message(StateFilter(Stock.stock))
+async def add_not_trips(message: Message):
+    await message.answer(LEXICON_FSM["stock"][1])
