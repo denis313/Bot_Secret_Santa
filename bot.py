@@ -36,7 +36,6 @@ async def main():
                        FSM_questionnaire.router,
                        profile_secret_friend.router)
     dp.include_routers(is_not_handled.router)
-
     # регистрация миддлвари
     # dp.update.middleware(ThrottlingMiddleware())
     # Пропускаем накопившиеся апдейты и запускаем polling
